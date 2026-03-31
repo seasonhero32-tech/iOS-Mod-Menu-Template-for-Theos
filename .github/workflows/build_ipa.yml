@@ -6,7 +6,7 @@ on:
 jobs:
   build_ipa_architecture:
     name: Compile Dashboard IPA via Serverless Theos
-    runs-on: macos-12
+    runs-on: macos-latest.[1]
 
     steps:
       - name: Checkout Forked Repository Architecture
