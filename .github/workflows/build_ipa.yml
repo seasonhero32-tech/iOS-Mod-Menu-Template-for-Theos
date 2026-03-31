@@ -1,0 +1,64 @@
+name: Automated VIP iOS Dashboard Compilation Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_ipa_architecture:
+    name: Compile Dashboard IPA via Serverless Theos
+    runs-on: macos-12
+
+    steps:
+      - name: Checkout Forked Repository Architecture
+        uses: actions/checkout@v3
+
+      - name: Provision Core Node Dependencies
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+
+      - name: Inject Essential Compilation Binaries via Homebrew
+        run: |
+          brew update
+          brew install ldid
+          brew install dpkg
+          brew install fakeroot
+
+      - name: Initialize and Clone the Theos Framework
+        run: |
+          echo "Cloning Theos ecosystem into the virtual runner..."
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "PATH=$PATH:~/theos/bin" >> $GITHUB_ENV
+
+      - name: Download and Mount Patched iOS SDKs
+        run: |
+          echo "Mounting necessary SDK frameworks for cross-compilation..."
+          git clone https://github.com/theos/sdks.git ~/theos/sdks
+          echo "SDK mount protocol complete."
+
+      - name: Override iOS Compatibility Version Constraints
+        run: |
+          echo "Modifying Makefile to enforce legacy iOS version support..."
+          sed -i '' 's/export TARGET.*/export TARGET = iphone:clang:14.5:12.0/g' Makefile
+          echo "Modifying Debian control files to guarantee compatibility..."
+          if; then
+            sed -i '' 's/Depends: mobilesubstrate/Depends: mobilesubstrate/g' layout/DEBIAN/control
+          fi
+
+      - name: Execute Binary Compilation Protocol
+        run: |
+          echo "Initiating Theos Make protocol to construct the application..."
+          make package FINALPACKAGE=1 FORMAT=ipa
+
+      - name: Isolate and Package the Finalized Application Artifact
+        run: |
+          mkdir output_artifact
+          cp packages/*.ipa output_artifact/
+          echo "Artifact isolation successfully executed."
+
+      - name: Exfiltrate Compiled Artifact to User Interface
+        uses: actions/upload-artifact@v3
+        with:
+          name: VIP_Dashboard_Compiled_Build
+          path: output_artifact/*.ipa
